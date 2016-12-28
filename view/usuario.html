@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Usuario</title>
+	<link rel="import" href="/mod/head.html">
+	<script>
+		angular.module("crudUser", [])
+		.controller("userController", function($scope, $http){
+			$scope.users = [];
+			$scope.tempUserData = {};
+
+			$scope.getData = function(){
+				$http.get('/controller/ctrlUser.php',{
+					params:{
+						'type':'list'
+					}
+				}).success(function(response){
+					if(response.status == "OK"){
+						$scope.users = response.users;
+					}
+				});
+			};
+
+			$scope.sendData = function(type, extra){
+				var data = $.param({
+					'data':$scope.tempUserData,
+					'extra':extra,
+					'type':type
+				});
+				var config = {
+					headers: {
+						'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8;'
+					}
+				};
+
+				$http.post('/controller/ctrlUser.php', data, config).success(function(response){
+					if(response.status=="OK"){
+						if(type == "create"){
+							$scope.users.push({
+								id:response.data.id,
+                        		name:response.data.name,
+                        		email:response.data.email,
+                        		phone:response.data.phone,
+                        		created:response.data.created
+							});
+						}else if(type == "update"){
+							$scope.users[$scope.index].name = response.data.name;
+							$scope.users[$scope.index].email = response.data.email;
+							$scope.users[$scope.index].phone = response.data.phone;
+						}else if(type == "delete"){
+							var index = $scope.users.indexOf(extra);
+							$scope.users.splice(index,1);
+						}
+						$scope.userForm.$setPristine();
+						$scope.cancel();
+
+						$scope.messageSuccess(response.message);
+					}else{
+						$scope.messageError(response.message);
+
+					}
+				});
+			};
+
+			$scope.addUser = function(){
+				$scope.sendData("create",0);
+			};
+
+			$scope.readUser = function(user){
+				$scope.tempUserData = {
+					id:user.id,
+					name:user.name,
+					email:user.email,
+					phone:user.phone
+				};
+				$scope.index = $scope.users.indexOf(user);
+				openForm();
+
+			};
+
+			$scope.updateUser = function(){
+				$scope.sendData("update",0);
+			};
+
+			$scope.deleteUser = function(user){
+				if(confirm("¿Estas seguro que quieres eliminar el usuario?")){
+					$scope.sendData("delete",user);
+				}
+				
+			};
+
+			// function to display success message
+			$scope.messageSuccess = function(msg){
+				$('#mensaje > p').html(msg);
+				$('#mensaje').removeClass('alert-danger');
+				$('#mensaje').removeClass('alert-success');
+				$('#mensaje').addClass('alert-success');
+				$('#mensaje').show();
+				$('#mensaje').delay(5000).slideUp(function(){
+            		$('#mensaje > p').html("");
+       	 		});
+				
+			};
+
+    		// function to display error message
+    		$scope.messageError = function(msg){
+				$('#mensaje > p').html(msg);
+				$('#mensaje').removeClass('alert-danger');
+				$('#mensaje').removeClass('alert-success');
+				$('#mensaje').addClass('alert-danger');
+				$('#mensaje').show();
+				$('#mensaje').delay(5000).slideUp(function(){
+            		$('#mensaje > p').html("");
+       	 		});
+				
+			};
+
+			$scope.cancel=function(){
+				closeForm();
+				$scope.tempUserData = {};			
+			};
+
+
+		});
+
+		function openCloseForm(){
+			$('#formUser').slideToggle(400,function(){
+				if($('#btnForm').hasClass('glyphicon-plus')){
+					$('#btnForm').removeClass('glyphicon-plus');
+					$('#btnForm').addClass('glyphicon-minus');
+				}else{
+					$('#btnForm').removeClass('glyphicon-minus');
+					$('#btnForm').addClass('glyphicon-plus');
+				}
+			});
+		}
+
+		function openForm(){
+			$('#formUser').slideDown(400,function(){
+				if($('#btnForm').hasClass('glyphicon-plus')){
+					$('#btnForm').removeClass('glyphicon-plus');
+					$('#btnForm').addClass('glyphicon-minus');
+				}
+			});
+		}
+
+		function closeForm(){
+			$('#formUser').slideUp(400,function(){
+				if($('#btnForm').hasClass('glyphicon-minus')){
+					$('#btnForm').removeClass('glyphicon-minus');
+					$('#btnForm').addClass('glyphicon-plus');
+				}
+			});
+		}
+
+	</script>
+</head>
+<body ng-app="crudUser">
+	<div ng-include="'/mod/menu.html'"></div>
+	<div class="container jumbotron separacion" ng-controller="userController" ng-init="getData()">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				Usuarios
+				<a href="javascript:void(0);" class="glyphicon glyphicon-plus pull-right" onClick="openCloseForm()" id="btnForm"></a>
+			</div>
+			<div class="panel-body oculto" id="formUser">
+				
+				<form class="form" name="userForm">
+					<div class="form-group">
+						<label>Nombre</label>
+						<input type="text" class="form-control" name="name" ng-model="tempUserData.name"/>
+					</div>
+					<div class="form-group">
+						<label>Email</label>
+						<input type="text" class="form-control" name="email" ng-model="tempUserData.email"/>
+					</div>
+					<div class="form-group">
+						<label>Telefono</label>
+						<input type="text" class="form-control" name="phone" ng-model="tempUserData.phone"/>
+					</div>
+					<a href="javascript:void(0);" class="btn btn-warning" ng-click="cancel()">Cancelar</a>
+					<a href="javascript:void(0);" class="btn btn-success" ng-hide="tempUserData.id" ng-click="addUser()">Agregar usuario</a>
+					<a href="javascript:void(0);" class="btn btn-success" ng-hide="!tempUserData.id" ng-click="updateUser()">
+						Actualizar usuario
+					</a>
+				</form>
+			</div>
+			<div class="panel-footer">
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th>Nombre</th>
+							<th>Email</th>
+							<th>Telefono</th>
+							<th>Creado</th>
+							<th>Acción</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr ng-repeat="user in users">
+							<td>{{user.name}}</td>
+							<td>{{user.email}}</td>
+							<td>{{user.phone}}</td>
+							<td>{{user.created}}</td>
+							<td >
+								<a href="javascript:void(0);" class="glyphicon glyphicon-edit btn-lg" ng-click="readUser(user)"></a>
+								<a href="javascript:void(0);" class="glyphicon glyphicon-trash btn-lg" ng-click="deleteUser(user)"></a>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		
+	</div>
+	<div class="col-sm-4 alert oculto navbar-fixed-bottom container text-center" id="mensaje" >
+		<p>lalalala</p>
+	</div>
+</body>
+</html>
