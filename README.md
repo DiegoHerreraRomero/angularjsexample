@@ -1,3 +1,3 @@
 # Angularjs Ejemplo CRUD
 
-Ejemplo simple CRUD de Angularjs frontend + PHP backend + Mysql
+Ejemplo simple CRUD de Angularjs front-end + PHP back-end + Mysql
